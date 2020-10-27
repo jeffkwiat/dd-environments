@@ -1,0 +1,81 @@
+version: '3.8'
+services:
+
+  web:
+    container_name: app-flask-web
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile.prod
+    command: ddtrace-run gunicorn --name app-flask --workers 8 --bind 0.0.0.0:5000 --statsd-host datadog-agent:8125 project:app
+    volumes:
+      - static_volume:/usr/src/app/project/static
+    expose:
+      - 5000
+    env_file:
+      - ./.env.prod
+    labels:
+      com.datadoghq.ad.check_names: '["gunicorn"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"proc_name": "app-flask"}]'
+      com.datadoghq.ad.logs: '[{"source": "python", "service": "app-flask", "sourcecategory": "sourcecode"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+    depends_on:
+      - db
+
+  db:
+    container_name: app-flask-db
+    build: ./services/postgresql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./services/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    environment:
+      - POSTGRES_USER=datadog
+      - POSTGRES_PASSWORD=datadog
+      - POSTGRES_DB=datadog_prod
+    labels:
+      com.datadoghq.ad.check_names: '["postgres"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"host":"%%host%%", "port":5432, "username":"datadog", "password":"datadog"}]'
+      com.datadoghq.ad.logs: >-
+                              [ {
+                                "source": "postgresql",
+                                "service": "app-flask",
+                                "log_processing_rules": [ {
+                                  "type": "multi_line",
+                                  "name": "log_start_with_date",
+                                  "pattern": "\\d+\\-\\d+\\-\\d+\\s\\d+\\:\\d+:\\d+\\.\\d+\\s\\w+"
+                                } ]
+                              } ]
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+
+  nginx:
+    container_name: app-flask-nginx
+    build: ./services/nginx
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+    volumes:
+      - static_volume:/home/app/web/project/static
+    labels:
+      com.datadoghq.ad.check_names: '["nginx"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"nginx_status_url": "http://%%host%%:81/nginx_status/"}]'
+      com.datadoghq.ad.logs: '[{"source": "nginx", "service": "app-flask"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+
+networks:
+  default:
+    external:
+      name: network-apm
+
+volumes:
+  postgres_data:
+  static_volume:

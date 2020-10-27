@@ -1,0 +1,41 @@
+version: '3'
+services:
+  datadog-agent:
+    image: datadog/agent:latest-jmx
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - /sys/kernel/debug:/sys/kernel/debug
+    ports:
+      - 127.0.0.1:8126:8126/tcp
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_DOCKER_LABELS_AS_TAGS=true
+      - DD_DOCKER_ENV_AS_TAGS=true
+      - DD_COLLECT_EC2_TAGS=true
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_LOG_LEVEL=TRACE
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_SYSTEM_PROBE_ENABLED=true
+      - DD_PROCESS_AGENT_ENABLED=true
+      - DD_SERVICE=app-java
+      - DD_ENV=prod
+      - DD_VERSION=1.0
+    cap_add:
+      - IPC_LOCK
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SYS_RESOURCE
+    container_name: datadog-agent
+    security_opt: 
+      - apparmor:unconfined
+    
+networks:
+  default:
+    external:
+      name: network-apm

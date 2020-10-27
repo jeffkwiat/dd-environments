@@ -1,0 +1,32 @@
+version: '3'
+services:
+
+  tomcat:
+    container_name: tomcat-java
+    build:
+      context: ./services/tomcat
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+      - 9012:9012
+    volumes:
+      - ./services/tomcat/app/target/app-datadog-0.1.0.jar /home/app-datadog-0.1.0.jar
+    environment:
+      - DD_AGENT_HOST=datadog-agent
+      - DD_AGENT_PORT=8126
+      - DD_ENV=prod
+      - DD_SERVICE=app-java
+      - DD_VERSION=1.0
+      - DD_PROFILING_ENABLED=true
+      - DD_LOGS_INJECTION=true
+      - CATALINA_OPTS=-javaagent:./dd-java-agent.jar -Ddd.trace.debug=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9012 -Dcom.sun.management.jmxremote.rmi.port=9012 -Djava.rmi.server.hostname=tomcat
+    labels:
+       com.datadoghq.ad.check_names: '["tomcat"]'
+       com.datadoghq.ad.init_configs: '[{"is_jmx": true, "collect_default_metrics": true}]'
+       com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": 9012, "username": "datadog", "password": "datadog"}]'
+       com.datadoghq.ad.logs: '[{"source": "tomcat", "service": "app-java"}]'
+
+networks:
+  default:
+    external:
+      name: network-apm

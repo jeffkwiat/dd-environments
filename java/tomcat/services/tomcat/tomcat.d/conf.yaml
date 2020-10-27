@@ -1,0 +1,14 @@
+init_config:
+  is_jmx: true
+  collect_default_metrics: true
+
+instances:
+  - host: localhost
+    port: 9012 # Port JMX is running on
+    rmi_registry_ssl: true # Set to true if you require SSL
+
+logs:
+  - type: file
+    path: /usr/local/tomcat/logs/*.log # Change the path, based on your needs
+    source: tomcat
+    service: app-java # Change the name to match your DD_SERVICE variable

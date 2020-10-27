@@ -1,0 +1,41 @@
+version: '3'
+services:
+
+  zookeeper:
+    container_name: app-zookeeper
+    image: wurstmeister/zookeeper
+    environment:
+      KAFKA_JMX_PORT: 49999
+      KAFKA_JMX_HOSTNAME: localhost
+    labels:
+      com.datadoghq.ad.check_names: '["zk"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": "2181"}]'
+      com.datadoghq.ad.logs: '[{"source": "zookeeper", "service": "app-kafka"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-kafka'
+      com.datadoghq.tags.version: '1.0'
+
+  kafka:
+    container_name: app-kafka
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_JMX_PORT: 39999
+      KAFKA_JMX_HOSTNAME: localhost
+    labels:
+      com.datadoghq.ad.check_names: '["kafka"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"proc_name": "app-kafka"}]'
+      com.datadoghq.ad.logs: '[{"source": "kafka", "service": "app-kafka"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-kafka'
+      com.datadoghq.tags.version: '1.0'
+
+networks:
+  default:
+    external:
+      name: network-apm

@@ -1,0 +1,21 @@
+version: '3'
+services:
+
+  solr:
+    container_name: solr-java
+    image: solr
+    ports:
+      - 8983:8983
+      - 18983:18983
+    environment:
+      - ENABLE_REMOTE_JMX_OPTS=true
+      - RMI_PORT=18983
+    labels:
+      com.datadoghq.ad.check_names: '["solr"]'
+      com.datadoghq.ad.init_configs: '[{"is_jmx": true, "collect_default_metrics": true}]'
+      com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": 18983}]'
+
+networks:
+  default:
+    external:
+      name: network-apm

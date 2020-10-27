@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+
+  web:
+    container_name: app-flask-web
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile.dev
+    command: ddtrace-run python manage.py run -h 0.0.0.0
+    volumes:
+      - ./services/web/:/usr/src/app/
+    ports:
+      - 5000:5000
+    env_file:
+      - ./.env.dev
+    labels:
+      com.datadoghq.tags.env: 'dev'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+
+  db:
+    container_name: app-flask-db
+    build: ./services/postgresql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=datadog
+      - POSTGRES_PASSWORD=datadog
+      - POSTGRES_DB=datadog_dev;
+    labels:
+      com.datadoghq.ad.check_names: '["postgres"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"host":"%%host%%", "port":5432, "username":"datadog", "password":"datadog"}]'
+      com.datadoghq.ad.logs: '[{"source": "postgres", "service": "postgres"}]'
+      com.datadoghq.tags.env: 'dev'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+
+networks:
+  default:
+    external:
+      name: network-apm
+
+volumes:
+  postgres_data:

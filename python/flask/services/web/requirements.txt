@@ -1,0 +1,7 @@
+ddtrace==0.43.0
+Flask==1.1.2
+Flask-SQLAlchemy==2.4.1
+psycopg2-binary==2.8.4
+setproctitle==1.1.10
+gevent==20.6.1
+gunicorn[gevent]==20.0.4
