@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+
+  db:
+    container_name: app-django-db
+    build: ./services/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=datadog
+      - MYSQL_USER=datadog
+      - MYSQL_DATABASE=datadog
+      - MYSQL_PASSWORD=datadog
+    labels:
+      com.datadoghq.ad.check_names: '["mysql"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: >-
+        [ {
+          "host": "%%host%%",
+          "port":3306,
+          "user":"datadog",
+          "pass":"datadog",
+          "options": {
+            "replication": "false",
+            "extra_status_metrics": "true",
+            "extra_innodb_metrics": "true",
+            "extra_performance_metrics": "true",
+            "schema_size_metrics": "false",
+            "disable_innodb_metrics": "false"
+          }
+        } ]
+      com.datadoghq.ad.logs: '[{"source": "mysql", "service": "mysql"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-django'
+      com.datadoghq.tags.version: '1.0'
+
+  nginx:
+    container_name: app-django-nginx
+    build: ./services/nginx
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+    volumes:
+      - static_volume:/home/app/static
+    labels:
+      com.datadoghq.ad.check_names: '["nginx"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"nginx_status_url": "http://%%host%%:81/nginx_status/"}]'
+      com.datadoghq.ad.logs: '[{"source": "nginx", "service": "nginx"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-flask'
+      com.datadoghq.tags.version: '1.0'
+
+  web:
+    container_name: app-django-web
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile.prod
+    command: ddtrace-run gunicorn --name app-django --workers 8 --bind 0.0.0.0:8000 --statsd-host datadog-agent:8125 datadog.wsgi
+    volumes:
+      - ./services/web/app:/usr/src/app
+    expose:
+      - 8000
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - db
+    labels:
+      com.datadoghq.ad.check_names: '["gunicorn"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"proc_name": "app-django"}]'
+      com.datadoghq.ad.logs: '[{"source": "python", "service": "app-django", "sourcecategory": "sourcecode"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'app-django'
+      com.datadoghq.tags.version: '1.0'
+
+networks:
+  default:
+    external:
+      name: network-apm
+volumes:
+  static_volume:

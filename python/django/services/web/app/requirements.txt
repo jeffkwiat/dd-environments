@@ -1,0 +1,7 @@
+ddtrace==0.43.0
+Django==3.1.1
+mysqlclient==2.0.1
+psycopg2
+gevent==20.6.1
+gunicorn[gevent]==20.0.4
+setproctitle==1.1.10 # Required to monitor Gunicorn

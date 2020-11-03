@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+   db:
+     image: mysql:5.7
+     container_name: db-wordpress
+     volumes:
+       - db_data:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: somewordpress
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+     ports:
+       - 3306:3306
+     labels:
+       com.datadoghq.ad.check_names: '["mysql"]'
+       com.datadoghq.ad.init_configs: '[{}]'
+       com.datadoghq.ad.instances: '[{"server": "%%host%%", "user": "datadog", "pass": "datadog", "port": 3306}]'
+       com.datadoghq.tags.env: 'prod'
+       com.datadoghq.tags.service: 'app-wordpress'
+       com.datadoghq.tags.version: '1.0'
+
+   app:
+     image: wordpress:latest
+     container_name: app-wordpress
+     ports:
+       - 8091:80
+     restart: always
+     environment:
+       WORDPRESS_DB_HOST: db
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: wordpress
+       WORDPRESS_DB_NAME: wordpress
+     volumes:
+       - app:/var/www/html
+     labels:
+       com.datadoghq.tags.env: 'prod'
+       com.datadoghq.tags.service: 'app-wordpress'
+       com.datadoghq.tags.version: '1.0'
+
+   adminer:
+     image: adminer:latest
+     container_name: adminer
+     environment:
+       ADMINER_DEFAULT_SERVER: db
+     ports:
+       - 8099:8080
+
+networks:
+  default:
+    external:
+      name: network-apm
+
+volumes:
+    app:
+    db_data:
+
+
+
