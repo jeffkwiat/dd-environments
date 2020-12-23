@@ -17,12 +17,12 @@ services:
       - DD_DOCKER_ENV_AS_TAGS=true
       - DD_COLLECT_EC2_TAGS=true
       - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-      - DD_LOG_LEVEL=TRACE
+      - DD_LOG_LEVEL=INFO
       - DD_LOGS_ENABLED=true
       - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
       - DD_SYSTEM_PROBE_ENABLED=true
       - DD_PROCESS_AGENT_ENABLED=true
-      - DD_SERVICE=app-java
+      - DD_SERVICE=app-python
       - DD_ENV=prod
       - DD_VERSION=1.0
     cap_add:
