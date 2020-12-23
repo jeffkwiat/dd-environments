@@ -1,0 +1,88 @@
+version: '3.8'
+services:
+
+  confluence:
+    container_name: intg-confluence
+    image: atlassian/confluence-server
+    ports:
+      - 8090:8090
+      - 8091:8091
+      - 8099:8099
+    volumes:
+      - /Users/jeffrey.kwiat/Documents/Datadog/projects/integrations/confluence/services/confluence/data:/var/atlassian/application-data/confluence
+      - /Users/jeffrey.kwiat/Documents/Datadog/projects/integrations/confluence/services/confluence/setenv.sh:/opt/atlassian/confluence/bin/setenv.sh
+    environment:
+      - CONFLUENCE_LOG_STDOUT=true
+    labels:
+      com.datadoghq.ad.check_names: '["confluence"]'
+      com.datadoghq.ad.init_configs: >-
+        [ {
+          "is_jmx": true,
+          "collect_default_metrics": true,
+          "new_gc_metrics": true,
+          "conf":
+          [
+            {
+              "include":
+              {
+                "bean": "Confluence:name=RequestMetrics",
+                "attribute":
+                [
+                  "AverageExecutionTimeForLastTenRequests",
+                  "CurrentNumberOfRequestsBeingServed",
+                  "ErrorCount",
+                  "NumberOfRequestsInLastTenSeconds"
+                ]
+              }
+            }
+          ]
+          }
+        ]
+      com.datadoghq.ad.instances: >-
+        [ {
+          "host": "%%host%%",
+          "port": 8099
+          }
+        ]
+      com.datadoghq.ad.logs: '[{"source": "confluence", "service": "intg-confluence"}]'
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'intg-confluence'
+      com.datadoghq.tags.version: '1.0'
+
+
+  db:
+    container_name: intg-confluence-db
+    build: ./services/postgresql
+    volumes:
+      - pgData:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=datadog
+      - POSTGRES_PASSWORD=datadog
+      - POSTGRES_DB=datadog
+    ports:
+      - 5432:5432
+    labels:
+      com.datadoghq.ad.check_names: '["postgres"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"host":"%%host%%", "port":5432, "username":"datadog", "password":"datadog"}]'
+      com.datadoghq.ad.logs: >-
+        [ {
+          "source": "postgresql",
+          "service": "intg-confluence",
+          "log_processing_rules": [ {
+            "type": "multi_line",
+            "name": "log_start_with_date",
+            "pattern": "\\d+\\-\\d+\\-\\d+\\s\\d+\\:\\d+:\\d+\\.\\d+\\s\\w+"
+          } ]
+        } ]
+      com.datadoghq.tags.env: 'prod'
+      com.datadoghq.tags.service: 'intg-confluence'
+      com.datadoghq.tags.version: '1.0'
+
+networks:
+  default:
+    external:
+      name: network-apm
+
+volumes:
+  pgData:
