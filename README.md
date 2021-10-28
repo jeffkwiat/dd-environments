@@ -1,5 +1,7 @@
 # Datadog APM Environments
 
+[![CIS](https://app.soluble.cloud/api/v1/public/badges/97a5c787-90b3-4b04-a397-e15308a0edb9.svg)](https://app.soluble.cloud/repos/details/github.com/jeffkwiat/dd-environments)  [![IaC](https://app.soluble.cloud/api/v1/public/badges/88928959-d44f-44d3-ab40-d581ec522721.svg)](https://app.soluble.cloud/repos/details/github.com/jeffkwiat/dd-environments)  
+
 This repository includes production-ready examples of various customer environments.
 
 The target audience is two-fold:
